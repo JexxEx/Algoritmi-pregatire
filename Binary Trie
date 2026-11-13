@@ -1,0 +1,60 @@
+#include <bits/stdc++.h>
+using namespace std;
+//Poti face si un ordered set cu asta care e cu mult mai rapid ca un treap. 
+//In principiu, aici doar calculeaza pentru valorile introduse cel mai mare XOR formabil cu o valoare data. Complexitate: O(B) pe query, unde B este numarul de biti = log_2(max_val). 
+struct BitTrie{
+    static const int BITS = 30; // valori < 2 ^ BITS
+    struct node{
+        int child[2];
+        int cnt;
+        node(){
+            child[0] = child[1] = -1;
+            cnt = 0;
+        }
+    };
+    vector<node> nodes;
+    BitTrie(){
+        nodes.emplace_back();
+    }
+    static int BitAt(int x, int k){ return ((x >> k) & 1);}
+    void update(int value, int delta){
+        int current = 0;
+        for(int k = BITS - 1; k >= 0; k--){
+            int bit = BitAt(value, k);
+            if(nodes[current].child[bit] == -1){
+                nodes[current].child[bit] = nodes.size();
+                nodes.emplace_back();
+            }
+            current = nodes[current].child[bit];
+            nodes[current].cnt+=delta;
+        }
+    }
+    int find(int value){
+        int current = 0;
+        for(int k = BITS - 1; k >= 0; k--){
+            int bit = BitAt(value, k);
+            int next = nodes[current].child[bit];
+            if(next == -1 or nodes[next].cnt < 1) return 0;
+            current = next;
+        }
+        return nodes[current].cnt;
+    }
+    void insert(int value){update(value, +1);}
+    void erase(int value){update(value, -1);}
+    bool CanGo(int node, int bit){
+        int next = nodes[node].child[bit];
+        return ((next != -1) and (nodes[next].cnt > 0));
+    }
+    int MaxXor(int x){
+        int current = 0, result = 0;
+        for(int k = BITS - 1; k >= 0; k--){
+            int bit = BitAt(x, k);
+            if(CanGo(current, !bit)){
+                current = nodes[current].child[!bit];
+                result |= (1 << k);
+            }
+            else current = nodes[current].child[bit];
+        }
+        return result;
+    }
+};
