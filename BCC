@@ -1,0 +1,37 @@
+#include <bits/stdc++.h>
+using namespace std;
+vector<int> tin, low;
+vector<bool> crit;
+vector<pair<int, int>> edges;
+vector<vector<pair<int, int>>>graph;
+vector<vector<int>> components;
+stack<int> s;
+int timer = 0;
+void bcc_dfs(int node, int parent_edge){
+    tin[node] = low[node] = ++timer;
+    int children = 0;
+    for(auto [x, id] : graph[node]){
+        if(id == parent_edge)continue;
+        if(tin[x] == 0){
+            children++;
+            s.push(id);
+            bcc_dfs(x, id);
+            low[node] = min(low[node], low[x]);
+            if(low[x] >= tin[node]){
+                if(children >= 2 or parent_edge != -1)crit[node] = true;
+                vector<int> push;
+                int top_edge = -1;
+                do{
+                    top_edge = s.top();
+                    push.push_back(top_edge);
+                    s.pop();
+                }while(top_edge != id);
+                components.push_back(push);
+            }
+        }
+        else if(tin[x] < tin[node]){
+            s.push(id);
+            low[node] = min(low[node], tin[x]);
+        }
+    }
+}
