@@ -1,0 +1,78 @@
+#include <bits/stdc++.h>
+#include <cassert>
+//https://judge.yosupo.jp/submission/413339
+//ntt iterativ, modulo prime speciale. 
+const int MOD = 998244353, g = 3;
+long long power(long long a, long long b, int mod = MOD) {
+    long long res = 1;
+    while (b) {
+        if (b & 1) res = (res * a * 1LL) % MOD;
+        a *= a;
+        a %= mod;
+        b >>= 1;
+    }
+    return res;
+}
+void ntt(std::vector<int> &a, bool invert) {
+    //bagam NTT iterativ, tata!
+    int n = a.size();
+    int lg = 31 - __builtin_clz(n);
+    assert(!(n & (n - 1)));
+    std::vector<int> rev(n);
+    for (int i = 0; i < n; i++) {
+        rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (lg - 1));
+        //recurenta reverse pe biti
+        if (i < rev[i]) std::swap(a[i], a[rev[i]]);
+        //rev[i] este o involutie, deci daca aplicam rev[rev[i]] = i, asadar ne asiguram ca nu dam swap de doua ori
+    }
+    for (int len = 2; len <= n; len<<=1) {
+        //emulam arborele de recursie
+        int wlen = (int) power(g, (MOD - 1) / len);
+        //radacina la putere - 1 / len, emuleaza ciclicitatea cercului complex
+        if (invert) wlen = power(wlen, MOD - 2);
+        //daca avem NTT invers, calculam cu invers modular, explicatia este cu matrici Vandermonde, peste nivelul liceului 
+        for (int i = 0; i < n; i+=len) {
+            //rezolv fiece bloc de lungime len
+            long long w = 1; // asta e echiv. cu nr complex
+            for (int j = 0; j < len / 2; j++) {
+                int u = a[i + j] % MOD, v = (int) (((a[i + j + len / 2] % MOD) * w) % MOD);
+                a[i + j] = (u + v < MOD) ? (u + v) : (u + v - MOD);
+                a[i + j + len / 2] = (u - v > -1) ? (u - v) : (u - v + MOD);
+                //butterfly, op ternari mai rapizi ca modulo 
+                w *= wlen;
+                w %= MOD;
+            }
+        }
+    }
+    if (invert) {
+        int ninv = power(n, MOD - 2);
+        //impartim la n, ca la FFT, iarasi explicatia este peste nivelul liceului 
+        for (int& x : a) x = (int)((long long)x * ninv % MOD);
+    }
+}
+std::vector<int> convolution(std::vector<int> a, std::vector<int> b){
+    int n = (int) a.size();
+    int m = (int) b.size();
+    int len = 1;
+    while(n + m > len) len *= 2;
+    a.resize(len);
+    b.resize(len);
+    std::vector<int> c(len, 0);
+    ntt(a, false);
+    ntt(b, false);
+    for(int i = 0; i < len; i++){
+        c[i] = (1LL * a[i] * b[i]) % MOD;
+    }
+    ntt(c, true);
+    return c;
+}
+int main(){
+    int n, m;
+    std::cin >> n >> m;
+    std::vector<int> a(n), b(m);
+    for(auto &x : a) std::cin >> x;
+    for(auto &x : b) std::cin >> x;
+    auto ans = convolution(a, b);
+    ans.resize(n + m - 1);
+    for(auto x : ans){std::cout << x << ' ' ;};
+}
