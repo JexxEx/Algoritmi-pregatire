@@ -1,0 +1,79 @@
+#include <bits/stdc++.h>
+using namespace std;
+//problema clasica de centroid:
+// Se considera un arbore cu n noduri. Sa se determine cate perechi neordonate de noduri sunt la distanta exact K.
+// Rezolvam eficient in n log n, astfel:
+// Descompunem arborele recursiv astfel:
+// 1. Identificam centroidul arborelui, orice arbore are cel putin un centroid si cel mult doi. Daca exista doi centrozi sunt mereu adiacenti
+// 2. Prin eliminarea centroidului, vom ramane, in mod evident, cu o padure. Pe fiecare dintre arborii din padure recursam.
+// Cand ajungem la un nod individual ne oprim.
+// La fiecare nivel de recursie recalculez adacimile subarborilor, pentru ca se impart din nou, componentele disjuncte.
+// Caci arborele se tot imparte in jumatate, inseamna ca am log n niveluri de recursie si in fiecare nivel de recursie vizitez cate un nod. Asadar am complexitate O(n * log(n)). Practic argumentul este acela de la Divide et Impera pe un array.
+// Motivul pentru care arborele de centroizi este folositor este urmatorul: orice lant (u, v) trece prin cel putin un centroid.
+// Demonstratie:
+// Fie un arbore (u, v) cu centroidul c1.
+// Daca dupa eliminarea nodului c1 u si v sunt in componente diferite, atunci drumul (u, v) trece prin c1.
+// Daca u si v sunt in aceeasi componenta aplicam rationamentul inductiv, pana cand ambele ajung in diferite componente.
+// Acum trebuie sa ne asiguram ca nu numaram de doua ori acelasi lant, care trece prin mai multi centroizi. Cel mai usor mod de a face acest lucru, este considerand fiecare lant la primul nivel la care da de un centroid.
+vector<vector<int>> tree;
+vector<bool> removed;
+vector<int> subtree_size;
+vector<int> cnt; //vector de frecventa pe care nu-l resetam, ca sa nu adaugam un factor inutil de *k
+int k;
+long long answer = 0;
+int fetch_subtree_size(int v, int p = -1){
+    subtree_size[v] = 1;
+    for(auto x : tree[v]){
+        if(x == p or removed[x]) continue;
+        subtree_size[v]+=fetch_subtree_size(x, v);
+    }
+    return subtree_size[v];
+}
+int get_centroid(int v,int tree_size,int p = -1){
+    for(auto x : tree[v]){
+        if(x == p or removed[x]) continue;
+        if(subtree_size[x] * 2 > tree_size)return get_centroid(x, tree_size, v);
+    }
+    return v;
+}
+//Pentru fiecare adancime din acea componenta conexa o introduc intr-o lista
+void collect(int v, int p, int d, vector<int>&out){
+    if(d > k) return; //oricum nu-mi trebuie
+    out.push_back(d);
+    for(auto x : tree[v]){
+        if(x == p or removed[x]) continue;
+        collect(x, v, d + 1, out);
+    }
+}
+//numara path-urile care trec prin centroidul respectiv
+void count_through(int c){
+    long long ans = 0;
+    vector<int> touched;
+    cnt[0] = 1;
+    touched.push_back(0);
+    for(auto v : tree[c]){
+        if(removed[v]) continue;
+        vector<int> cur;
+        collect(v, c, 1, cur);
+        for(auto x : cur){
+            ans += cnt[k - x];
+        }
+        for(auto x : cur){
+            cnt[x]++;
+            touched.push_back(x);
+        }
+    }
+    for(auto x : touched){
+        cnt[x] = 0;
+    }
+    answer += ans;
+}
+void build(int u){
+    int c = get_centroid(u, fetch_subtree_size(u));
+    removed[c] = true;
+    count_through(c);
+    for(auto x : tree[c]){
+        if(removed[x])continue;
+        build(x);
+    }
+}
