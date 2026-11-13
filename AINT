@@ -1,0 +1,51 @@
+#include <bits/stdc++.h>
+#include <cassert>
+using namespace std;
+template<typename T>
+struct aint {
+    int n;
+    vector<T> v;
+    aint(int n) {
+        //initiere de troglodit
+        this->n = n;
+        v.resize(4 * n + 5, T());
+    }
+    void set_update(int node, int l, int r, int poz, T const &x) {
+        if (l == r) {
+            v[node] = x;
+            return;
+        }
+        int mid = (l + r) / 2;
+        if (poz <= mid)set_update(node * 2, l, mid, poz, x);
+        else set_update(node * 2 + 1, mid + 1, r, poz, x);
+        v[node] = v[node * 2] + v[node * 2 + 1];
+    }
+    void add_update(int node, int l, int r, int poz, T const &x) {
+        if (l == r) {
+            v[node] += x;
+            return;
+        }
+        int mid = (l + r) / 2;
+        if (poz <= mid)add_update(node * 2, l, mid, poz, x);
+        else add_update(node * 2 + 1, mid + 1, r, poz, x);
+        v[node] = v[node * 2] + v[node * 2 + 1];
+    }
+    T back_query(int node, int l, int r, int ql, int qr) {
+        if (l > qr || r < ql)return T();
+        if (ql <= l && r <= qr) return v[node];
+        int mid = (l + r) / 2;
+        return back_query(node * 2, l, mid, ql, qr) + back_query(node * 2 + 1, mid + 1, r, ql, qr);
+    }
+    void set(int poz, T const &x) {
+        assert(1 <= poz && poz <= n);
+        set_update(1, 1, n, poz, x);
+    }
+    void add(int poz, T const &x) {
+        assert(1 <= poz && poz <= n);
+        add_update(1, 1, n, poz, x);
+    }
+    T query(int ql, int qr) {
+        assert(1 <= ql && ql <= qr && qr <= n);
+        return back_query(1, 1, n, ql, qr);
+    }
+};
