@@ -1,0 +1,91 @@
+#include <bits/stdc++.h>
+#include <cassert>
+using namespace std;
+constexpr int inf = 2e9;
+struct segment_tree {
+    struct ndx {
+        int minn, lazy;
+
+        ndx() {
+            minn = inf;
+            lazy = 0;
+        }
+        ndx(int val) {
+            minn = val;
+            lazy = 0;
+        }
+
+        ndx operator +(const ndx &b) {
+            assert(lazy == 0 and b.lazy == 0);
+            ndx ret = ndx();
+            ret.minn = min(minn, b.minn);
+            return ret;
+        }
+    };
+    vector<ndx> v;
+    int n;
+    void push(int id, int l, int r) {
+        if (!v[id].lazy) return;
+        v[id].minn += v[id].lazy;
+        if (l != r) {
+            assert(2 * id + 1 <= 4 * n);
+            v[2 * id].lazy += v[id].lazy;
+            v[2 * id + 1].lazy += v[id].lazy;
+        }
+        v[id].lazy = 0;
+    }
+
+    void u(int node, int l, int r, int ql, int qr, int val) {
+        if (l > qr || r < ql || l > r) return;
+        if (ql <= l && r <= qr) {
+            v[node].lazy += val;
+            push(node, l, r);
+            return;
+        }
+        push(node, l, r);
+        int mid = (l + r) / 2;
+        u(2 * node, l, mid, ql, qr, val);
+        push(2 * node, l, mid);
+        u(2 * node + 1, mid + 1, r, ql, qr, val);
+        push(2 * node + 1, mid + 1, r);
+        v[node] = v[2 * node] + v[2 * node + 1];
+    }
+
+    void b(int node, int l, int r, const vector<int> &a) {
+        if (l > r) return;
+        if (l == r) {
+            v[node] = ndx(a[l]);
+            return;
+        }
+        int mid = (l + r) / 2;
+        b(2 * node, l, mid, a);
+        b(2 * node + 1, mid + 1, r, a);
+        v[node] = v[2 * node] + v[2 * node + 1];
+    }
+
+    int q(int node, int l, int r, int ql, int qr) {
+        if (l > qr || r < ql || l > r) return inf;
+        push(node, l, r);
+        if (ql <= l && r <= qr) return v[node].minn;
+        int mid = (l + r) / 2;
+        return min(q(2 * node, l, mid, ql, qr), q(2 * node + 1, mid + 1, r, ql, qr));
+    }
+
+    segment_tree(int n, const vector<int> &a) {
+        assert(n + 1 == (int) a.size());
+        this->n = n;
+        v.resize(4 * n + 5);
+        b(1, 1, n, a);
+    }
+
+    segment_tree() {
+    }
+
+    void update(int ql, int qr, int val) {
+        u(1, 1, n, ql, qr, val);
+    }
+
+    int query(int ql, int qr) {
+        return q(1, 1, n, ql, qr);
+    }
+};
