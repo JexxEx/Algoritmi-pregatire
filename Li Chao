@@ -1,0 +1,60 @@
+#include<bits/stdc++.h>
+#include <cassert>
+using namespace std;
+struct line {
+    long long a, b;
+    line() {
+        this->a = 0;
+        this->b = 0;
+    }
+    line(long long a, long long b) { this->a = a; this->b = b; }
+    long long eval(long long point) {
+        return 1LL * a * point + b;
+    }
+};
+struct LiChao {
+    int n;
+    vector<line> tree;
+    LiChao(int n_) {
+        this->n = n_;
+        tree.resize(4 * n + 5, line(0, -1e18));
+    }
+    void Purge() {
+        this->tree.clear();
+        this->n = 0;
+    }
+    void _insert(int node, int l, int r, line ln) {
+        int mid = (l + r) / 2;
+        if (tree[node].eval(mid) < ln.eval(mid)) {
+            swap(tree[node], ln);
+        }
+        if (l!=r) {
+            if (ln.eval(l) > tree[node].eval(l)) {
+                _insert(2 * node, l, mid, ln);
+            }
+            else if (ln.eval(r) > tree[node].eval(r)) {
+                _insert(2 * node + 1, mid + 1, r, ln);
+            }
+        }
+    }
+    long long _query(int node, int l, int r, long long poz) {
+        if (l==r) {
+            return tree[node].eval(poz);
+        }
+        else {
+            int mid = (l + r) / 2;
+            if (poz <= mid) {
+                return max(tree[node].eval(poz), _query(2 * node, l, mid, poz));
+            }
+            else {
+                return max(tree[node].eval(poz), _query(2 * node + 1, mid + 1, r , poz));
+            }
+        }
+    }
+    void insert(line ln) {
+        _insert(1, 1, n, ln);
+    }
+    long long query(long long poz) {
+        return _query(1, 1, n, poz);
+    }
+};
