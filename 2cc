@@ -1,0 +1,32 @@
+#include <bits/stdc++.h>
+using namespace std;
+vector<int> tin, low;
+vector<pair<int, int>> edges;
+vector<vector<pair<int, int>>>graph;
+vector<bool> crit; //Returns if edge with given id is critical.
+stack<int> s;
+vector<vector<int>> twoCC;
+int timer = 0;
+void two_edge_cc_dfs(int node, int parent_edge){
+    low[node] = tin[node] = ++timer;
+    s.push(node);
+    for(auto [x, id] : graph[node]){
+        if(id == parent_edge) continue;
+        if(tin[x] == 0){
+            two_edge_cc_dfs(x, id);
+            low[node] = min(low[node], low[x]);
+        }
+        else low[node] = min(low[node], tin[x]);
+    }
+    if(low[node] == tin[node]){
+        if(parent_edge != -1)crit[parent_edge] = true;
+        int top_node = -1;
+        vector<int> comp;
+        do{
+            top_node = s.top();
+            s.pop();
+            comp.push_back(top_node);
+        }while(top_node != node);
+        twoCC.push_back(comp);
+    }
+}
