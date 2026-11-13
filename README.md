@@ -34,6 +34,7 @@ Pretty much doar Robert o sa vada asta, si eventual cine mai merge cu mine la AG
 - **Algoritmul lui Mo**
 - **Probabilitati, expected values**
 - **Hashing** — ce pot face exact cu hash-urile si cum abordezi problemele cu ele.
+- **SCC, BCC, 2CC** - o mica discutie cred ca ar fi foarte benefica, ca sa vad daca am inteles exact despre ce e vorba. 
 
 ## Jurnal
 
