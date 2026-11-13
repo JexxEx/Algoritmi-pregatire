@@ -1,0 +1,48 @@
+//btw am scos first solve la AGM cu o problema de d&c dp 
+//Larp or die! 
+#include <bits/stdc++.h>
+using namespace std;
+class Solution {
+    public:
+    int g, n;
+    vector<int> v;
+    vector<long long> curr, before;
+    vector<long long> s;
+    long long cost(int i, int j) {
+        return 1LL * (s[j] - s[i-1])*(j-i + 1);
+    }
+    void solve_it(int l, int r, int optl, int optr) {
+        if (l > r) return;
+        int mid = (l + r) / 2;
+        pair<long long, int> best = {LLONG_MAX, -1};
+        for (int k = optl; k <= min(optr,mid); k++) {
+            pair<long long, int> val = {(k ? before[k - 1] : 0) + cost(k, mid), k};
+            best = min(val, best);
+        }
+        curr[mid] = best.first;
+        int opt = best.second;
+        solve_it(l, mid - 1, optl, opt);
+        solve_it(mid + 1, r, opt, optr);
+    }
+    void solution() {
+        int g, n;
+        cin >> n >> g;
+        v.assign(n + 1, 0), before.assign(n + 1, 0), curr.assign(n + 1, 0), s.assign(n + 1, 0);
+        for (int i = 1; i <= n; i++) {
+            cin >> v[i];
+        }
+        for (int i = 1; i <= n; i++) {
+            s[i]=s[i-1] + v[i];
+            before[i] = cost(1, i);
+        }
+        for (int i = 1; i < g; i++) {
+            solve_it(1, n, 1, n);
+            before = curr;
+        }
+        cout << before[n] << "\n";
+    }
+};
+int main() {
+    Solution obj;
+    obj.solution();
+}
