@@ -1,0 +1,45 @@
+#include <bits/stdc++.h>
+using namespace std;
+struct sqrt_decomp{
+    int n;
+    vector<int> v;
+    int root;
+    vector<long long> decomp;
+    sqrt_decomp(const vector<int> &v){
+        this->v = v;
+        n = v.size();
+        root = (int) sqrt(n);
+        decomp.resize(n / root);
+        for(int i = 0; i < n; i++){
+            decomp[i / root] += v[i];
+        }
+    }
+    void update(int pos, int val){
+        decomp[pos/root] -= v[pos];
+        v[pos] = val;
+        decomp[pos/root] += v[pos];
+    }
+    long long query(int l, int r){
+        int block_l = l / root;
+        int block_r = r / root;
+        long long sum = 0;
+        if(block_l == block_r){
+            for(int i = l; i <= r; i++){
+                sum += v[i];
+            }
+            return sum;
+        }
+        else {
+            for(int i = l; i < min((l / root + 1) * root, n); i++){
+                sum += v[i];
+            }
+            for(int i = block_l + 1; i <= block_r - 1; i++){
+                sum += decomp[i];
+            }
+            for(int i = root * (r / root); i <= r; i++){
+                sum += v[i];
+            }
+        }
+        return sum;
+    }
+};
