@@ -1,0 +1,50 @@
+#include <bits/stdc++.h>
+using namespace std;
+constexpr int sigma = 26;
+struct trie{
+    //If sum the sum of the length of words inserted is known before hand, we can use std::vector.reserve(), to avoid redundant reallocations of memory
+    struct node{
+        int child[sigma];
+        int pass, end;
+        node(){
+            pass = 0;
+            end = 0;
+            memset(child, -1, sizeof(child));
+        }
+    };
+    vector<node> nodes;
+    trie(){
+        nodes.emplace_back();
+    }
+    int find(const string &s){
+        int current = 0;
+        for(char ch : s){
+            int next = nodes[current].child[ch - 'a'];
+            if(next == -1) return -1;
+            current = next;
+        }
+        return current;
+    }
+    void insert(const string &s){
+        int current = 0;
+        for(char ch : s){
+            if(nodes[current].child[ch - 'a'] == -1){
+                nodes[current].child[ch -'a'] = nodes.size();
+                nodes.emplace_back();
+            }
+            current = nodes[current].child[ch - 'a'];
+            nodes[current].pass++;
+        }
+        nodes[current].end++;
+    }
+    int count_words(const string &s){
+        int fetch = find(s);
+        if(fetch != -1)return nodes[fetch].end;
+        else return 0;
+    }
+    int count_passes(const string &s){
+        int fetch = find(s);
+        if(fetch != -1)return nodes[fetch].pass;
+        else return 0;
+    }
+};
