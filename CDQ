@@ -1,0 +1,89 @@
+#include <bits/stdc++.h>
+using namespace std;
+//OBSERVATIE: CLion pune diacritice, am stat si am scris asta singur, fara Claude ;(((((((
+// CDQ Divide and Conquer, numit după Chen Danqi
+//Rezolva recurente de tip dp[i] = max(dp[j] + ...) cu constrângerile i < j, a_i < a_j si b_i < b_j
+//in n log ^ 2 n
+constexpr int NMAX = 1e5;
+int n;
+int dp[NMAX + 5];
+int a[NMAX + 5], b[NMAX + 5];
+int NrValoriB; //nr de valori distincte din b
+//---------------FENWICK---------------------
+int aib[NMAX + 5];
+//update poziția
+void update(int val, int poz) {
+    for (int i = poz; i <= n; i += (i & -i)) aib[i] = max(aib[i], val);
+}
+//maxim pe prefix
+int maxpfx(int poz) {
+    int rez = 0;
+    for (int i = poz; i >= 1; i -= (i & -i)) rez = max(rez, aib[i]);
+    return rez;
+}
+void erasepfx(int poz) {
+    for (int i = poz; i <= n; i += (i & -i)) aib[i] = 0;
+}
+//---------------CDQ--------------------------
+//Înainte de a prezenta codul voi explica cum funcționează ideea si raționamentul care demonstrează corectitudinea:
+//Sa alegem o pereche de indici i, j cu j < i
+//Pentru fiecare apel pe intervalul [st, dr] cu [j, i] inclus in [st, dr] avem 3 cazuri:
+//1. j < i <= mid, așadar răspunsul se va afla mai adânc in recursie, in ramura stanga, nu trebuie sa răspundem acum.
+//2. mid < j < i, așadar răspunsul se va afla mai adânc in recursie, in ramura dreapta, nu trebuie sa răspundem acum.
+//3. j <= mid < i, așadar pentru a afla soluția FINALA pentru dp[i] va trebui sa stim soluția finala pentru dp[j]
+//Este evident ca recursand pentru orice pereche de indici distincți {i, j}, la un moment dat i si j vor fi in doua jumatati diferite, caci daca nu vom ajunge
+//la aceasta situatie inainte de intervalul de recursie [i, j], atunci sigur in intervalul [i, j] vor fi in jumatati diferite.
+//Daca suntem in cazul 3. la care vom ajunge mereu, asa cum am demonstrat mai sus rezolvam astfel:
+//1.Rezolvam [st, mid], adica aflu raspunsul DEFINITIV la dp[j]
+//2.Propag eficient (de obicei cu o structura arborescenta AINT, Li Chao, AIB), dp[j] in [mid + 1, dr]
+//3. Recursez in ramura dreapta.
+//Este important sa intelegem de ce trebuie sa executam pasii in aceasta ordine:
+//Atunci cand pentru dp[i] gasesc un drum de cost optim care trece prin j, dupa pot recursa la dreapta lui i si sa gasesc un k > i, astfel incat sa se formeze drumul j -> i -> k
+//Daca nu as fi propagat j in intervalul lui i, acest drum nu ar fi fost gasit. Acest exemplu prezinta un rationament simplificat al argumentului de corectitudine al CDQ.
+void solve(int st, int dr) {
+    if (st == dr) return;
+    int mij = (st + dr) >> 1;
+    //Pasul 1: rezolv jumatatea stanga [1, mid]
+    solve(st, mij);
+    //Pasul 2: tranzițiile dp[j] -> dp[i], j aparține [st, mij] si j aparține [mij + 1, dr]
+    vector<int> stanga, dreapta;
+    for (int i = st; i <= mij; i++) {
+        stanga.push_back(i);
+    }
+    for (int i = mij + 1; i <= dr; i++) {
+        dreapta.push_back(i);
+    }
+    auto cmp = [&](int x, int y) {
+        return a[x] < a[y];
+        //sortez dupa a
+    };
+    sort(stanga.begin(), stanga.end(), cmp);
+    sort(dreapta.begin(), dreapta.end(), cmp);
+    int inserate_de_la_stanga = 0;
+    //parcurg cu un pointer monoton, cat timp am pozitii din stanga a[st] < a[pozitie] curenta, avansez pointer-ul si adaug b-urile
+    for (int i : dreapta) {
+        while (inserate_de_la_stanga < stanga.size() && a[stanga[inserate_de_la_stanga]] < a[i]) {
+            int indice_curent = stanga[inserate_de_la_stanga];
+            update(dp[indice_curent],b[indice_curent]);
+            inserate_de_la_stanga++;
+        }
+        //In fenwick sunt acum inserate punctele cu a_j < a_i
+        //Pe prefixul b_(i-1) sunt dp-urile acelor puncte cu a_j < a_i si b_j < b_i
+        dp[i] = max(dp[i], maxpfx(b[i] - 1) + 1);
+    }
+    //rollback la AIB
+    for (int i = 0; i < inserate_de_la_stanga; i++) {
+        erasepfx(b[stanga[i]]);
+    }
+    //recursez la dreapta
+    solve(mij + 1, dr);
+}
+int main() {
+    cin >> n;
+    for (int i = 0; i < n; i++) {
+        cin >> a[i] >> b[i];
+        dp[i] = 1;
+    }
+    solve(0, n-1);
+    cout << max(1, *max_element(dp, dp + n));
+}
