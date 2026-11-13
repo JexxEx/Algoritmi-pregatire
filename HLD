@@ -1,0 +1,38 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int NMAX = 100005;
+int subtree[NMAX], par[NMAX], heavy_kid[NMAX], depth[NMAX];
+int decomp[NMAX], head[NMAX], pos[NMAX];
+vector<int> tree[NMAX];
+int timer = 0;
+void dfs1(int node, int parent) {
+  subtree[node] = 1;
+  par[node] = parent;
+  if(par[node] != -1){
+      depth[node] = depth[parent] + 1;
+  }
+  else depth[node] = 1;
+  int heavy = -1;
+  for (auto x : tree[node]) {
+      if(x == parent)continue;
+      dfs1(x, node);
+      subtree[node] += subtree[x];
+      if(heavy == -1 or subtree[heavy] < subtree[x]){
+          heavy = x;
+      }
+  }
+  heavy_kid[node] = heavy;
+}
+void dfs2(int node, int parent, int heavy){
+    ++timer;
+    decomp[timer] = node;
+    head[node] = heavy;
+    pos[node] = timer;
+    if(heavy_kid[node] != -1){
+        dfs2(heavy_kid[node], node, heavy);
+    }
+    for(auto x : tree[node]){
+        if(x == parent or x == heavy_kid[node]) continue;
+        dfs2(x, node, x);
+    }
+}
