@@ -1,0 +1,36 @@
+#include <bits/stdc++.h>
+#define int long long
+using namespace std;
+vector <vector<int>> opt;
+vector <vector<int>> dp;
+vector <int> v;
+vector <long long> sum;
+signed main() {
+    int n;
+    cin>>n;
+    opt.resize(n + 1, vector<int>(n + 1));
+    dp.resize(n + 1, vector<int>(n + 1));
+    v.resize(n + 1);
+    sum.resize(n + 1);
+    for (int i = 1; i <= n; i++) {
+        cin>>v[i];
+        opt[i][i] = i;
+    }
+    for (int i = 1; i <= n; i++) {
+        sum[i] = sum[i - 1] + v[i];
+    }
+    for (int len = 2; len <= n; len++) {
+        for (int i = 1; i <= n-len + 1; i++) {
+            int j = i + len - 1;
+            int mn = LLONG_MAX;
+            for (int k = opt[i][j-1]; k<=min(opt[i+1][j], j-1); k++) {
+                if (mn >= dp[i][k] + dp[k+1][j] + sum[j] - sum[i - 1]) {
+                    opt[i][j] = k;
+                    mn = dp[i][k] + dp[k+1][j] + sum[j] - sum[i - 1];
+                }
+            }
+            dp[i][j] = mn;
+        }
+    }
+    cout<<dp[1][n];
+}
