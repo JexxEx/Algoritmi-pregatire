@@ -1,0 +1,24 @@
+struct sparse_table {
+    int n;
+    int logn;
+    vector<vector<int> > rmq;
+    sparse_table(int n, const vector<int> &v) {
+        this->n = n;
+        logn = 31 - __builtin_clz(n);
+        rmq.resize(n + 2, vector<int>(logn + 1, 0));
+        for (int i = 1; i <= n; i++) {
+            rmq[i][0] = v[i];
+        }
+        for (int j = 1; j <= logn; j++) {
+            for (int i = 1; i <= n; i++) {
+                rmq[i][j] = max(rmq[i][j - 1], rmq[min(i + (1 << (j - 1)), n)][j - 1]);
+            }
+        }
+    }
+    sparse_table() {}
+    int query(int i, int j) {
+        int len = j - i + 1;
+        int log_len = 31 - __builtin_clz(len);
+        return max(rmq[i][log_len], rmq[j - (1 << log_len) + 1][log_len]);
+    }
+};
