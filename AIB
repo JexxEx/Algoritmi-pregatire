@@ -1,4 +1,4 @@
-#include <algorithm>
+//cuprinde si cautare binara prin binary lifting in log(n). 
 #include <bits/stdc++.h>
 #include <cassert>
 #define pb push_back
