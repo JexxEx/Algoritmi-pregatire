@@ -1,0 +1,59 @@
+#include <bits/stdc++.h>
+using namespace std;
+const static int NMAX = 100005;
+const static int LOGMAX = 18;
+int n;
+vector<int> tree[NMAX], vtree[NMAX];
+int bl[NMAX][LOGMAX];
+int depth[NMAX];
+int tin[NMAX];
+int timer = 0;
+void dfs(int node, int parent) {
+    tin[node] = ++timer;
+    if (parent == -1)depth[node] = 1;
+    else depth[node] = depth[parent] + 1;
+    bl[node][0] = parent;
+    for (int i = 1; i < LOGMAX; i++) {
+        if (bl[node][i - 1] != -1) {
+            bl[node][i] = bl[bl[node][i - 1]][i - 1];
+        }
+        else bl[node][i] = -1;
+    }
+    for (auto const x : tree[node]) {
+        if (x == parent) continue;
+        dfs(x, node);
+    }
+}
+int lca(int x, int y) {
+    if (depth[x] > depth[y]) swap(x, y);
+    int diff = depth[y] - depth[x];
+    for (int i = LOGMAX - 1; i >= 0; i--) {
+        if ((diff >> i) & 1) {
+            y = bl[y][i];
+        }
+    }
+    if (x == y) return y;
+    for (int i = LOGMAX - 1; i >= 0; i--) {
+        if (bl[y][i] != bl[x][i]) {
+            y = bl[y][i];
+            x = bl[x][i];
+        }
+    }
+    return bl[x][0];
+}
+vector<int> build(vector<int> v) {
+    sort(v.begin(), v.end(), [&](int a, int b) { return tin[a] < tin[b]; });
+    int k = v.size();
+    for (int i = 0; i < k - 1; i++) {
+        v.push_back(lca(v[i], v[i + 1]));
+    }
+    sort(v.begin(), v.end(), [&](int a, int b) { return tin[a] < tin[b]; });
+    v.erase(unique(v.begin(), v.end()), v.end());
+    for (auto x : v) {
+        vtree[x].clear();
+    }
+    for (int i = 0; i + 1 < v.size(); i++) {
+        vtree[lca(v[i], v[i + 1])].push_back(v[i + 1]);
+    }
+    return v; //v[0] -> radacina arborelui
+}
