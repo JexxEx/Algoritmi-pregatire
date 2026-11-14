@@ -15,7 +15,7 @@ Pretty much doar Robert o sa vada asta, si eventual cine mai merge cu mine la AG
 - [ ] Binary descent pe arbore de intervale
 
 **Siruri**
-- [ ] KMP
+- [Done] KMP
 - [ ] Suffix array
 - [ ] Hashing
 
