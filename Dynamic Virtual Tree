@@ -1,0 +1,187 @@
+#include <bits/stdc++.h>
+#include <cassert>
+using namespace std;
+int lb(int n) {
+    return 31 - __builtin_clz((int)n);
+}
+struct dynamic_virtual_tree {
+    //Se considera o multime de k noduri dintr-un arbore cu n noduri. In contextul problemei, putem ignora nodurile care nu se afla in multimea celor k noduri, atat timp cat mentinem structura arborelui original.
+    //Din alt punct de vedere, notand cu x multimea nodurilor, se considera multimea aferenta A(x), care reprezinta nodurile din arborele virtual, definita astfel:
+    //A(x) = {lca(a, b) (lca-ul in arborele initial) | a, b \in x}
+    //Vom demonstra urmatoarele doua proprietati:
+    //1. Arborele virtual are cel mult 2|x| - 1 noduri, formal |A(x)| <= 2 * |x| - 1
+    //2. A(x) = x U {lca(u_1, u_2), lca(u_2, u_3) ..., lca(u_{|x| - 1}, u_{|x|})
+    //Daca demonstram proprietatea 2 este evident ca 1 este o consecinta directa.
+    //Putem demonstra inductiv, printr-o descompunere recursiva:
+    //Notam cu m = |x|
+    //A({x_1, x_2 ... x_m}) = {x_1, lca(x_1, x_2)} U A({x_2 ... x_m})
+    //A({x_2 ... x_m}) = {x_2, lca(x_2, x_3)} U A({x_3, x_4 ... x_m})
+    //Adica A({x_1, x_2 ... x_m}) = {x_1, lca(x_1, x_2)} U {x_2, lca(x_2, x_3)} U A({x_3, x_4 ... x_m}) si tot asa, pana cand ajungem la multimea {a_m}
+    //OBSERVATIE: X este o multime ordonata, dupa ordinea dfs a nodurilor incluse.
+    //Asadar pe noi ne intereseaza, la orice moment doar lca-urile formate
+    dynamic_virtual_tree(int n, const vector<pair<int, int>>& edges) {
+        this->n = n;
+        logn = lb(n + 1);
+        tree.resize(n + 5);
+        tin.resize(n + 5);
+        cnt.resize(n + 5);
+        marked.resize(n + 5);
+        at_tin.resize(n + 5);
+        tout.resize(n + 5);
+        depth.resize(n + 5);
+        bl.resize(n + 5, vector<int>(logn + 5));
+        for (auto [u, v] : edges) {
+            add_edge(u, v);
+        }
+        dfs(1, -1);
+        for (int i = 1; i <= n; i++) {
+            s.insert(tin[i]);
+            c.insert(tin[i]);
+            marked[i] = true;
+            if (tree[i].size() <= 1 and (i != 1 || n == 1)) leafs++;
+        }
+    }
+    int n, logn;
+    vector<vector<int>> tree;
+    vector<vector<int>> bl;
+    vector<int> at_tin, tin, tout, depth; //Euler tour op as fuck.
+    int timer = 0;
+    void add_edge(int u, int v) {
+        tree[u].push_back(v);
+        tree[v].push_back(u);
+    }
+    void dfs(int node, int parent) {
+        tin[node] = ++timer;
+        at_tin[timer] = node;
+        bl[node][0] = parent;
+        if (parent == -1) depth[node] = 1;
+        else depth[node] = depth[parent] + 1;
+        for (int i = 1; i <= logn; i++) {
+            if (bl[node][i - 1] == -1)bl[node][i] = -1;
+            else bl[node][i] = bl[bl[node][i - 1]][i - 1];
+        }
+        for (auto x : tree[node]) {
+            if (x == parent) continue;
+            dfs(x, node);
+        }
+        tout[node] = timer;
+    }
+    int lca(int u, int v) {
+        if (depth[u] < depth[v]) swap(u, v);
+        int diff = depth[u] - depth[v];
+        for (int i = 0; i <= logn; i++) {
+            if ((diff >> i) & 1) {
+                u = bl[u][i];
+            }
+        }
+        if (u == v) return u;
+        for (int i = logn; i >= 0; i--) {
+            if (bl[u][i] != bl[v][i]) {
+                u = bl[u][i];
+                v = bl[v][i];
+            }
+        }
+        return bl[u][0];
+    }
+    set<int> s, c; //s maintains the sorted tin of every marked node
+    //c maintains the sorted tin of every relevant node
+    vector<int> cnt;
+    vector<bool> marked;
+    int leafs = 0;
+    void refresh(int node) {
+        if (marked[node]) {
+            c.insert(tin[node]);
+            s.insert(tin[node]);
+        }
+        else if (cnt[node] > 0) {
+            //este un lca, dar nu este propriu-zis marcat
+            c.insert(tin[node]);
+            if (s.find(tin[node]) != s.end())s.erase(s.find(tin[node]));
+        }
+        else {
+            if (c.find(tin[node]) != c.end())c.erase(c.find(tin[node]));
+            if (s.find(tin[node]) != s.end())s.erase(s.find(tin[node]));
+        }
+    }
+    bool is_leaf(int node) {
+        if (!marked[node]) return false;
+        auto it = s.upper_bound(tin[node]);
+        return (it == s.end() or tout[node] < *it);
+        //fie nu exista nod care vine mai tarziu ca el in dfs, ori nu se afla in subarborele sau.
+    }
+    pair<int, int> succesors(int t) {
+        pair<int, int> ret;
+        if (s.lower_bound(t) == s.begin()) ret.first = -1;
+        else ret.first = *prev(s.lower_bound(t));
+        if (s.upper_bound(t) == s.end()) ret.second = -1;
+        else ret.second = *s.upper_bound(t);
+        return ret;
+    }
+    void add(int node) {
+        auto [left, right] = succesors(tin[node]);
+        if (left != -1) left = at_tin[left];
+        if (right != -1) right = at_tin[right];
+
+        if (left != -1 and is_leaf(left)) leafs--;
+        if (right != -1 and is_leaf(right)) leafs--;
+        marked[node] = true;
+        refresh(node);
+        if (is_leaf(node)) leafs++;
+        if (left != -1 and is_leaf(left)) leafs++;
+        if (right != -1 and is_leaf(right)) leafs++;
+
+        if (left != -1 and right != -1) {
+            int anc = lca(left, right);
+            cnt[anc]--;
+            refresh(anc);
+        }
+        if (left != -1) {
+            int anc = lca(left, node);
+            cnt[anc]++;
+            refresh(anc);
+        }
+        if (right != -1) {
+            int anc = lca(right, node);
+            cnt[anc]++;
+            refresh(anc);
+        }
+    }
+    void remove(int node) {
+        assert(marked[node]);
+        auto [left, right] = succesors(tin[node]);
+        if (left != -1) left = at_tin[left];
+        if (right != -1) right = at_tin[right];
+
+        if (left != -1 and is_leaf(left)) leafs--;
+        if (is_leaf(node)) leafs--;
+        marked[node] = false;
+        refresh(node);
+        if (left != -1 and is_leaf(left)) leafs++;
+        if (left != -1 and right != -1) {
+            int anc = lca(left, right);
+            cnt[anc]++;
+            refresh(anc);
+        }
+        if (left != -1) {
+            int anc = lca(left, node);
+            cnt[anc]--;
+            refresh(anc);
+        }
+        if (right != -1) {
+            int anc = lca(right, node);
+            cnt[anc]--;
+            refresh(anc);
+        }
+    }
+    int count(){
+        int ret = leafs;
+        if (c.size() >= 2) {
+            int r = at_tin[*c.begin()];
+            int f = at_tin[*next(c.begin())];
+            if (c.upper_bound(tout[f]) == c.end()) {
+                ret++;
+            }
+        }
+        return ret;
+    }
+};
