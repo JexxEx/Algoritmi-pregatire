@@ -1,0 +1,38 @@
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+struct hasher {
+    //Daca nu merge, putem trece la 2^61 - 1 cu inmultiri pe __int128
+    const ll mod = 1e9 + 7;
+    const ll base = 31; 
+    vector<ll> hashes, powers;
+    int n;
+    hasher(const string &s) {
+        n = (int) s.size();
+        hashes.assign(n, 0);
+        powers.assign(n + 1, 0);
+        hashes[0] = s[0] - 'a' + 1;
+        powers[0] = 1;
+        for (int i = 1; i < n; i++) {
+            hashes[i] = ((hashes[i - 1] * base) % mod + (s[i] - 'a' + 1)) % mod;
+            powers[i] = (powers[i - 1] * base) % mod;
+        }
+        powers[n] = (powers[n - 1] * base) % mod;
+    }
+    ll get(int l, int r) {
+        return (hashes[r] - (powers[r - l + 1] * ((l) ? hashes[l - 1] : 0)) % mod + mod) % mod;
+    }
+    bool appears(const string &check) {
+        if (check.empty()) return true;
+        ll h = 0;
+        for (auto c : check) {
+            h = ((h * base) % mod + (c - 'a' + 1)) % mod;
+        }
+        for (int i = 0; i <= n - (signed int)check.length(); i++) {
+            if (get(i, i + (signed int)check.length() - 1) == h) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
