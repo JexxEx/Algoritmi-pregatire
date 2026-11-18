@@ -1,0 +1,28 @@
+#include <bits/stdc++.h>
+//Maximal matching on bipartite graph
+//O(V*E) using Kuhn's algorithm
+using namespace std;
+int nl, nr, ans;
+vector<bool> used;
+vector<vector<int>> graph;
+vector<int> mt; //pentru cei din "dreapta" cuplajul in stanga
+bool try_kuhn(int node) {
+    if (used[node]) return false;
+    used[node] = true;
+    for (auto x : graph[node]) {
+        if (mt[x] == -1 || try_kuhn(mt[x])) {
+            mt[x] = node;
+            return true;
+        }
+    }
+    return false;
+}
+void driver() {
+    ans = 0;
+    used.assign(nl + 1, false);
+    mt.assign(nr + 1, -1);
+    for (int i = 1; i <= nl; ++i) {
+        if (try_kuhn(i)) ans++;
+        fill(used.begin(), used.end(), false);
+    }
+}
