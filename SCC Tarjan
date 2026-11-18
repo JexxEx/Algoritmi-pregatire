@@ -1,0 +1,32 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n, m;
+vector<vector<int>> graph;
+vector<vector<int>> components;
+vector<int> tin, low;
+vector<bool> on_stack;
+stack<int> s;
+int timer = 0;
+void scc_tarjan(int node) {
+    tin[node] = low[node] = ++timer;
+    on_stack[node] = true;
+    s.push(node);
+    for (auto x : graph[node]) {
+        if (tin[x] == 0) {
+            scc_tarjan(x);
+            low[node] = min(low[node], low[x]);
+        }
+        else if (on_stack[x]) low[node] = min(low[node], tin[x]);
+    }
+    if (low[node] == tin[node]) {
+        int u = -1;
+        vector<int> push;
+        do {
+            u = s.top();
+            s.pop();
+            on_stack[u] = false;
+            push.push_back(u);
+        }while (u != node);
+        components.push_back(push);
+    }
+}
